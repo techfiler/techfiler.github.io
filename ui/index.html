@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Landing Autopilot — Workflow UI</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1 class="h1">Landing Autopilot — Workflow UI</h1>
+        <p class="p">
+          Run a custom workflow: <span class="kbd">Scrape</span> → <span class="kbd">LLM rewrite</span> →
+          <span class="kbd">Build</span> → <span class="kbd">Deploy to GitHub</span>.
+        </p>
+      </div>
+      <div class="badges">
+        <span class="badge">Scrape + images</span>
+        <span class="badge">OpenAI (optional)</span>
+        <span class="badge">GitHub deploy</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>1) Configuration</h2>
+
+        <div class="two">
+          <div>
+            <label class="label">API Base URL</label>
+            <input id="apiBase" placeholder="http://localhost:8787" />
+            <div class="small">If you opened this UI as a file (file://), set API Base to your running server URL.</div>
+          </div>
+          <div>
+            <label class="label">Reference URL (optional)</label>
+            <input id="referenceUrl" placeholder="https://example.com" />
+            <div class="small">Used by the Scrape step to draft copy + download images.</div>
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:10px">
+          <div>
+            <label class="label">Max images</label>
+            <input id="maxImages" type="number" min="0" max="20" value="8"/>
+            <div class="small">Scraper will attempt up to this many images.</div>
+          </div>
+          <div>
+            <label class="label">Model (OpenAI)</label>
+            <input id="openaiModel" value="gpt-5" />
+            <div class="small">Any model your key can access.</div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="two">
+          <div>
+            <label class="label">OpenAI API key (optional)</label>
+            <input id="openaiKey" placeholder="sk-..." />
+            <div class="small">Used by “LLM rewrite”. If empty, that step will skip.</div>
+          </div>
+          <div>
+            <label class="label">GitHub token (PAT)</label>
+            <input id="ghToken" placeholder="ghp_..." />
+            <div class="small">Needs <b>repo</b> (+ <b>workflow</b> if uploading workflows).</div>
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:10px">
+          <div>
+            <label class="label">Repo (owner/name)</label>
+            <input id="ghRepo" placeholder="yourname/yourrepo" />
+          </div>
+          <div>
+            <label class="label">Branch</label>
+            <input id="ghBranch" value="main" />
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:10px">
+          <div>
+            <label class="label">Create repo if missing</label>
+            <select id="createRepo">
+              <option value="no" selected>No</option>
+              <option value="yes">Yes (create under your account)</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">Connection test</label>
+            <button class="btn" id="testConn">Test API</button>
+            <div class="small">Should say “API OK”.</div>
+          </div>
+        </div>
+
+        <div id="notice" class="notice"></div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <button class="btn primary" id="runAll">Run workflow</button>
+          <button class="btn" id="saveConfig">Save config</button>
+          <button class="btn danger" id="resetLogs">Clear logs</button>
+        </div>
+        <div class="small" style="margin-top:8px">
+          Tip: You can run individual steps below and reorder them.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Workflow steps</h2>
+        <div id="steps" class="steps"></div>
+
+        <div class="hr"></div>
+
+        <h2>Logs</h2>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="{{LANG}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{TITLE}}</title>
+    <meta name="description" content="{{DESCRIPTION}}" />
+
+    <meta property="og:title" content="{{TITLE}}" />
+    <meta property="og:description" content="{{DESCRIPTION}}" />
+    <meta property="og:type" content="website" />
+
+    <style>
+      :root { --accent: {{ACCENT_COLOR}}; }
+    </style>
+
+    <link rel="stylesheet" href="./assets/style.css" />
+  </head>
+
+  <body>
+    <header class="container header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="brand-text">
+          <div class="brand-name">{{BRAND_NAME}}</div>
+          <div class="brand-tagline">{{BRAND_TAGLINE}}</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#features">Features</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        ☰
+      </button>
+    </header>
+
+    <main>
+      <section class="hero container">
+        <div class="hero-card">
+          <p class="pill">Generated from JSON • Optional scrape • Deployed to Pages</p>
+          <h1>{{HERO_HEADLINE}}</h1>
+          <p class="sub">{{HERO_SUBHEADLINE}}</p>
+
+          <div class="cta-row">
+            <a class="btn primary" href="{{WHATSAPP_LINK}}" target="_blank" rel="noopener">
+              {{PRIMARY_CTA_TEXT}}
+            </a>
+            <a class="btn ghost" href="{{INSTAGRAM_URL}}" target="_blank" rel="noopener">
+              {{SECONDARY_CTA_TEXT}}
+            </a>
+          </div>
+
+          <div class="micro">
+            <span>✅ Mobile-ready</span>
+            <span>⚡ Fast static site</span>
+            <span>🧩 Optional scraper + LLM</span>
+          </div>
+        </div>
+
+        <div class="hero-side">
+          {{HERO_IMAGE_HTML}}
+          <p class="hint">Tip: edit <code>landing.json</code> → push → auto-deploy.</p>
+        </div>
+      </section>
+
+      <section id="features" class="container sections">
+        {{SECTIONS_HTML}}
+      </section>
+
+      <section id="gallery" class="container gallery">
+        {{GALLERY_HTML}}
+      </section>
+
+      <section id="contact" class="container contact">
+        <div class="contact-card">
+          <h2>Contact</h2>
+          <p class="contact-line">
+            Email:
+            <a href="mailto:{{FOOTER_EMAIL}}">{{FOOTER_EMAIL}}</a>
+          </p>
+
+          <div class="contact-actions">
+            <a class="btn primary" href="{{WHATSAPP_LINK}}" target="_blank" rel="noopener">
+              WhatsApp
+            </a>
+            <a class="btn ghost" href="{{INSTAGRAM_URL}}" target="_blank" rel="noopener">
+              Instagram
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container footer">
+      <span>© <span id="year"></span> {{COPYRIGHT_NAME}}</span>
+      <span class="sep">•</span>
+      <span>Made with a tiny generator</span>
+    </footer>
+
+    <script src="./assets/app.js"></script>
+  </body>
+</html>

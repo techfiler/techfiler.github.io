@@ -1,0 +1,45 @@
+{
+  "site": {
+    "title": "Your Brand — Landing Page",
+    "description": "A clean landing page generated from JSON (or scraped) and deployed automatically.",
+    "language": "en"
+  },
+  "brand": {
+    "name": "Your Brand",
+    "tagline": "Turn visitors into customers",
+    "accentColor": "#6d28d9"
+  },
+  "hero": {
+    "headline": "A landing page that ships itself",
+    "subheadline": "Use the Workflow UI to scrape, rewrite with LLM, build, and deploy to GitHub Pages.",
+    "primaryCtaText": "Chat on WhatsApp",
+    "whatsappNumber": "+91 98765 43210",
+    "whatsappMessage": "Hi! I came from your landing page and I'd like to know more.",
+    "secondaryCtaText": "Visit Instagram",
+    "instagramUrl": "https://www.instagram.com/yourhandle/"
+  },
+  "media": {
+    "heroImage": "images/img-001.jpg",
+    "gallery": []
+  },
+  "sections": [
+    {
+      "title": "What you get",
+      "items": [
+        "Modern responsive design",
+        "Optional scraper + image downloader",
+        "Optional LLM rewrite (OpenAI Responses API)",
+        "Automatic deployment to GitHub Pages"
+      ]
+    }
+  ],
+  "footer": {
+    "copyrightName": "Your Brand",
+    "email": "hello@example.com"
+  },
+  "scrape": {
+    "sourceUrl": "https://www.instagram.com/dome.castle/",
+    "scrapedAt": "2026-01-31T21:52:56.133Z",
+    "note": "Drafted via scraper. Ensure you have rights to reuse any content/images."
+  }
+}

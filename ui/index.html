@@ -42,6 +42,14 @@
 
         <div class="two" style="margin-top:10px">
           <div>
+            <label class="label">Scrape overwrite</label>
+            <select id="overwriteScrape">
+              <option value="yes" selected>Yes (replace brand/headline/images)</option>
+              <option value="no">No (only fill empty fields)</option>
+            </select>
+            <div class="small">Use “Yes” if you want scraped content to replace the default template text.</div>
+          </div>
+          <div>
             <label class="label">Max images</label>
             <input id="maxImages" type="number" min="0" max="20" value="8"/>
             <div class="small">Scraper will attempt up to this many images.</div>
@@ -70,6 +78,14 @@
 
         <div class="two" style="margin-top:10px">
           <div>
+            <label class="label">Scrape overwrite</label>
+            <select id="overwriteScrape">
+              <option value="yes" selected>Yes (replace brand/headline/images)</option>
+              <option value="no">No (only fill empty fields)</option>
+            </select>
+            <div class="small">Use “Yes” if you want scraped content to replace the default template text.</div>
+          </div>
+          <div>
             <label class="label">Repo (owner/name)</label>
             <input id="ghRepo" placeholder="yourname/yourrepo" />
           </div>
@@ -80,6 +96,14 @@
         </div>
 
         <div class="two" style="margin-top:10px">
+          <div>
+            <label class="label">Scrape overwrite</label>
+            <select id="overwriteScrape">
+              <option value="yes" selected>Yes (replace brand/headline/images)</option>
+              <option value="no">No (only fill empty fields)</option>
+            </select>
+            <div class="small">Use “Yes” if you want scraped content to replace the default template text.</div>
+          </div>
           <div>
             <label class="label">Create repo if missing</label>
             <select id="createRepo">

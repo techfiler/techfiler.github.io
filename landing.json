@@ -19,7 +19,7 @@
     "instagramUrl": "https://www.instagram.com/yourhandle/"
   },
   "media": {
-    "heroImage": "",
+    "heroImage": "images/img-001.jpg",
     "gallery": []
   },
   "sections": [
@@ -38,8 +38,8 @@
     "email": "hello@example.com"
   },
   "scrape": {
-    "sourceUrl": "https://dribbble.com/tags/fashion-landing-page",
-    "scrapedAt": "2026-02-01T07:46:49.310Z",
+    "sourceUrl": "https://www.instagram.com/dome.castle/",
+    "scrapedAt": "2026-02-01T08:30:45.703Z",
     "overwrite": false,
     "note": "Drafted via scraper. Ensure you have rights to reuse any content/images."
   }

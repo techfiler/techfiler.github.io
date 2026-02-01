@@ -101,3 +101,10 @@ Only scrape/reuse content you have permission to use. Treat scraped output as a 
 ## Scrape step note
 
 If Scrape fails with a Cheerio import error, update to v2.1.2 and run `npm install` again.
+
+
+## Scrape overwrite
+
+The scraper **does not overwrite** existing template fields by default in older versions, so you might keep seeing “Your Brand”.
+
+In v2.1.4+, turn on **Scrape overwrite = Yes** in the UI (or pass `--overwrite` in CLI) to replace brand/headline/links/images from the reference URL.

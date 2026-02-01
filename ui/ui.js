@@ -32,7 +32,8 @@ function getConfig() {
     ghToken: document.getElementById("ghToken").value.trim(),
     ghRepo: document.getElementById("ghRepo").value.trim(),
     ghBranch: document.getElementById("ghBranch").value.trim() || "main",
-    createRepo: document.getElementById("createRepo").value === "yes"
+    createRepo: document.getElementById("createRepo").value === "yes",
+    overwriteScrape: document.getElementById("overwriteScrape")?.value === "yes"
   };
 }
 
@@ -46,7 +47,8 @@ function saveConfig() {
     openaiModel: cfg.openaiModel,
     ghRepo: cfg.ghRepo,
     ghBranch: cfg.ghBranch,
-    createRepo: cfg.createRepo
+    createRepo: cfg.createRepo,
+    overwriteScrape: cfg.overwriteScrape
   }));
   log("Saved config (non-secret fields) to localStorage.");
 }
@@ -64,6 +66,9 @@ function loadConfig() {
     if (cfg.ghRepo) document.getElementById("ghRepo").value = cfg.ghRepo;
     if (cfg.ghBranch) document.getElementById("ghBranch").value = cfg.ghBranch;
     document.getElementById("createRepo").value = cfg.createRepo ? "yes" : "no";
+    if (document.getElementById("overwriteScrape") && typeof cfg.overwriteScrape !== "undefined") {
+      document.getElementById("overwriteScrape").value = cfg.overwriteScrape ? "yes" : "no";
+    }
     log("Loaded saved config.");
   } catch {}
 }

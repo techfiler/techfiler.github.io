@@ -18,12 +18,22 @@ function parseArgs(argv) {
     if (a === "--url" && argv[i + 1]) out.url = argv[++i];
     else if (a === "--max-images" && argv[i + 1]) out.maxImages = Number(argv[++i]);
     else if (a === "--timeout" && argv[i + 1]) out.timeoutMs = Number(argv[++i]);
+    else if (a === "--overwrite") out.overwrite = true;
   }
   return out;
 }
 
 function safeText(s) { return String(s || "").replace(/\s+/g, " ").trim(); }
 function firstNonEmpty(...vals) { for (const v of vals) { const t = safeText(v); if (t) return t; } return ""; }
+
+function parseInstagramTitle(title) {
+  // Example: "Dome Castle (@dome.castle) • Instagram photos and videos"
+  const t = safeText(title);
+  const m = t.match(/^(.+?)\s*\(@([^\)]+)\)/);
+  if (!m) return { name: "", handle: "" };
+  return { name: safeText(m[1]), handle: safeText(m[2]) };
+}
+
 function unique(list) { const seen = new Set(); const out = []; for (const x of list) { const k = String(x||"").trim(); if(!k||seen.has(k)) continue; seen.add(k); out.push(k);} return out; }
 function isProbablyImageUrl(u) { const s = String(u||"").toLowerCase(); if(!s) return false; if(s.startsWith("data:")) return false; if(s.endsWith(".svg")) return false; return true; }
 function resolveUrl(base, maybeRel) { try { return new URL(maybeRel, base).toString(); } catch { return ""; } }
@@ -148,70 +158,100 @@ function readExistingJson() {
   try { return JSON.parse(fs.readFileSync(landingPath, "utf8")); } catch { return {}; }
 }
 
-function mergeLanding(existing, scraped, downloadedFiles, baseUrl) {
-  const keep = (pathArr, fallback = "") => {
+function mergeLanding(existing, scraped, downloadedFiles, baseUrl, overwrite = false) {
+  const getExisting = (pathArr, fallback = "") => {
     let cur = existing;
     for (const k of pathArr) cur = cur?.[k];
     const v = typeof cur === "string" ? cur : "";
     return v || fallback;
   };
 
-  const brandName = keep(["brand","name"], scraped.title || "Brand");
-  const accentColor = keep(["brand","accentColor"], "#6d28d9");
-  const whatsappNumber =
-    keep(["hero","whatsappNumber"], "") ||
-    extractWhatsAppNumberFromLink(scraped.whatsappLink) ||
-    "+91 98765 43210";
-  const whatsappMessage =
-    keep(["hero","whatsappMessage"], "") ||
-    extractWhatsAppTextFromLink(scraped.whatsappLink) ||
-    "Hi! I came from your landing page and I'd like to know more.";
-  const instagramUrl = keep(["hero","instagramUrl"], "") || scraped.instagramUrl || "https://www.instagram.com/yourhandle/";
+  const prefer = (existingVal, scrapedVal, fallback = "") => {
+    const s = safeText(scrapedVal);
+    const e = safeText(existingVal);
+    if (overwrite && s) return s;
+    return e || s || fallback;
+  };
 
-  const heroImage = downloadedFiles[0] ? `images/${downloadedFiles[0]}` : (existing?.media?.heroImage || "");
+  const isInstagram = String(baseUrl || "").includes("instagram.com");
+  const igMeta = isInstagram ? parseInstagramTitle(scraped.title) : { name: "", handle: "" };
+
+  const brandName = prefer(getExisting(["brand","name"]), igMeta.name || scraped.title, "Brand");
+  const accentColor = getExisting(["brand","accentColor"], "#6d28d9");
+
+  const whatsappNumber = prefer(
+    getExisting(["hero","whatsappNumber"]),
+    extractWhatsAppNumberFromLink(scraped.whatsappLink),
+    "+91 98765 43210"
+  );
+
+  const whatsappMessage = prefer(
+    getExisting(["hero","whatsappMessage"]),
+    extractWhatsAppTextFromLink(scraped.whatsappLink),
+    "Hi! I came from your landing page and I'd like to know more."
+  );
+
+  const instagramUrl = prefer(
+    getExisting(["hero","instagramUrl"]),
+    // If the scraped page IS Instagram, just use the input URL
+    isInstagram ? baseUrl : scraped.instagramUrl,
+    "https://www.instagram.com/yourhandle/"
+  );
+
+  // If we downloaded at least one image, always use it as hero image.
+  const heroImage = downloadedFiles[0]
+    ? `images/${downloadedFiles[0]}`
+    : prefer(getExisting(["media","heroImage"]), "", "");
+
   const gallery = downloadedFiles.slice(1, 10).map((f) => `images/${f}`);
 
-  const sections = (scraped.sections && scraped.sections.length ? scraped.sections : existing?.sections || []).slice(0, 5);
+  const sectionsExisting = existing?.sections || [];
+  const sectionsScraped = scraped.sections && scraped.sections.length ? scraped.sections : [];
+  const sections = overwrite ? (sectionsScraped.length ? sectionsScraped : sectionsExisting) : (sectionsExisting.length ? sectionsExisting : sectionsScraped);
+  const sectionsFinal = (sections || []).slice(0, 5);
 
   return {
     site: {
-      title: keep(["site","title"], scraped.title || "Landing Page"),
-      description: keep(["site","description"], scraped.description || ""),
-      language: keep(["site","language"], "en")
+      title: prefer(getExisting(["site","title"]), scraped.title, "Landing Page"),
+      description: prefer(getExisting(["site","description"]), scraped.description, ""),
+      language: getExisting(["site","language"], "en")
     },
     brand: {
       name: brandName,
-      tagline: keep(["brand","tagline"], scraped.description || ""),
+      tagline: prefer(getExisting(["brand","tagline"]), scraped.description, ""),
       accentColor
     },
     hero: {
-      headline: keep(["hero","headline"], scraped.headline || scraped.title || "Welcome"),
-      subheadline: keep(["hero","subheadline"], scraped.subheadline || scraped.description || ""),
-      primaryCtaText: keep(["hero","primaryCtaText"], "Chat on WhatsApp"),
+      headline: prefer(getExisting(["hero","headline"]), scraped.headline || scraped.title, "Welcome"),
+      subheadline: prefer(getExisting(["hero","subheadline"]), scraped.subheadline || scraped.description, ""),
+      primaryCtaText: getExisting(["hero","primaryCtaText"], "Chat on WhatsApp"),
       whatsappNumber,
       whatsappMessage,
-      secondaryCtaText: keep(["hero","secondaryCtaText"], "Visit Instagram"),
+      secondaryCtaText: getExisting(["hero","secondaryCtaText"], "Visit Instagram"),
       instagramUrl
     },
     media: { heroImage, gallery },
-    sections,
+    sections: sectionsFinal,
     footer: {
-      copyrightName: keep(["footer","copyrightName"], brandName),
-      email: keep(["footer","email"], "hello@example.com")
+      copyrightName: prefer(getExisting(["footer","copyrightName"]), brandName, brandName),
+      email: getExisting(["footer","email"], "hello@example.com")
     },
     scrape: {
       sourceUrl: baseUrl,
       scrapedAt: new Date().toISOString(),
+      overwrite,
       note: "Drafted via scraper. Ensure you have rights to reuse any content/images."
     }
   };
 }
+
 
 async function main() {
   const args = parseArgs(process.argv);
   const url = args.url || process.env.REFERENCE_URL || "";
   const maxImages = Number.isFinite(args.maxImages) ? args.maxImages : 8;
   const timeoutMs = Number.isFinite(args.timeoutMs) ? args.timeoutMs : 20000;
+  const overwrite = !!args.overwrite;
 
   if (!url) { console.error("Missing --url"); process.exit(1); }
 
@@ -240,7 +280,7 @@ async function main() {
   }
 
   const existing = readExistingJson();
-  const merged = mergeLanding(existing, scraped, downloaded, finalUrl);
+  const merged = mergeLanding(existing, scraped, downloaded, finalUrl, overwrite);
 
   fs.writeFileSync(landingPath, JSON.stringify(merged, null, 2) + "\n", "utf8");
   fs.writeFileSync(path.join(root, "scrape-report.json"), JSON.stringify({ source: finalUrl, report }, null, 2) + "\n", "utf8");

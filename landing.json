@@ -38,8 +38,8 @@
     "email": "hello@example.com"
   },
   "scrape": {
-    "sourceUrl": "https://www.instagram.com/dome.castle/photos",
-    "scrapedAt": "2026-02-01T20:40:41.445Z",
+    "sourceUrl": "https://www.instagram.com/dome.castle",
+    "scrapedAt": "2026-02-01T20:49:48.042Z",
     "overwrite": false,
     "note": "Drafted via scraper. Ensure you have rights to reuse any content/images."
   }

@@ -339,8 +339,8 @@ class DocxBuilder:
             levels[q.level] = levels.get(q.level, 0) + 1
         self._para("Level mix - " + "  |  ".join(f"{k}: {v}" for k, v in levels.items()),
                    size=8.5, color=MUTED)
-        if part.infographic:
-            self._image(part.infographic)
+        for name in part.infographics:
+            self._image(name)
         for q in part.questions:
             self._question(q)
 

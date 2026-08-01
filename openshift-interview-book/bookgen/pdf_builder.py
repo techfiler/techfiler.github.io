@@ -265,8 +265,8 @@ class PdfBuilder:
             Spacer(1, 4),
             Paragraph(f"Level mix - {mix}", S["caption"]),
         ]
-        if part.infographic:
-            story += self._graphic(part.infographic)
+        for name in part.infographics:
+            story += self._graphic(name)
         story.append(Spacer(1, 6))
         for q in part.questions:
             story += self._question(q)

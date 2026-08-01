@@ -48,7 +48,7 @@ class Part:
     title: str
     subtitle: str
     intro: str
-    infographic: Optional[str]
+    infographics: List[str]
     questions: List[Question]
 
     @property

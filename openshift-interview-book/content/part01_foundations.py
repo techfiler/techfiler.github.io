@@ -14,7 +14,7 @@ PART = Part(
         "quietly measure how deep you can go before you run out of road. This part builds that floor properly "
         "so the rest of the book has something to stand on."
     ),
-    infographic="container_stack",
+    infographics=["container_stack"],
     questions=[
         Q(
             q="What actually is a container?",

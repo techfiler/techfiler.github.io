@@ -384,7 +384,7 @@ class PdfBuilder:
                           S["toc"]),
                 Paragraph(part.span, S["toc"]),
             ])
-        table = Table(rows, colWidths=[24, self.width - 24 - 74, 74], repeatRows=1)
+        table = Table(rows, colWidths=[34, self.width - 34 - 74, 74], repeatRows=1)
         table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ("TOPPADDING", (0, 0), (-1, -1), 5),

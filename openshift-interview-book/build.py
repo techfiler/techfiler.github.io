@@ -22,7 +22,7 @@ BASENAME = "OpenShift_Platform_Engineer_Interview_Book_V5_250QA"
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--outdir", default=os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), "dist"))
+        os.path.abspath(__file__)), "output"))
     args = parser.parse_args()
     os.makedirs(args.outdir, exist_ok=True)
 

@@ -98,8 +98,15 @@ def flow(title: str, caption: str, steps: Sequence[Tuple[str, str]],
     cols = len(steps)
     gap = 16.0
     w = (PAGE_W - gap * (cols - 1)) / cols
+
+    # Shrink the label font until the longest single word fits inside a box.
+    label_size = 8.4
+    longest = max((word for label, _ in steps for word in label.split()), key=len)
+    while label_size > 6.0 and text_width(longest, theme.BODY_BOLD, label_size) > w - 12:
+        label_size -= 0.2
+
     body_lines = max(len(wrap(d, theme.BODY_FONT, 7.4, w - 12)) for _, d in steps)
-    label_lines = max(len(wrap(l, theme.BODY_BOLD, 8.4, w - 12)) for l, _ in steps)
+    label_lines = max(len(wrap(l, theme.BODY_BOLD, label_size, w - 12)) for l, _ in steps)
     box_h = 16 + label_lines * 10.2 + body_lines * 9.0
     height = box_h + 62
     d = Drawing(PAGE_W, height)
@@ -111,7 +118,7 @@ def flow(title: str, caption: str, steps: Sequence[Tuple[str, str]],
         x = i * (w + gap)
         box(g, x, y, w, box_h, tint, color)
         inner = centered_text(g, label, x + w / 2, y + box_h - 7, w - 12,
-                              theme.BODY_BOLD, 8.4, color, 10.2)
+                              theme.BODY_BOLD, label_size, color, 10.2)
         centered_text(g, detail, x + w / 2, inner - 2, w - 12,
                       theme.BODY_FONT, 7.4, theme.INK_SOFT, 9.0)
         if i < cols - 1:
@@ -185,9 +192,14 @@ def compare(title: str, caption: str, left_head: str, right_head: str,
 def ladder(title: str, caption: str, rungs: Sequence[Tuple[str, str, str]]) -> Drawing:
     """Growing bars - used for the Foundation -> Architect answer ladder."""
     n = len(rungs)
-    bar_h = 34.0
     gap = 7.0
-    height = n * (bar_h + gap) + 58
+    widths = [PAGE_W * (0.44 + 0.56 * (i + 1) / n) for i in range(n)]
+    heights = []
+    for (label, band, detail), w in zip(rungs, widths):
+        lines = len(wrap(band, theme.BODY_BOLD, 8.0, w - 100)) + \
+            len(wrap(detail, theme.BODY_FONT, 7.5, w - 100))
+        heights.append(max(30.0, 11 + lines * 9.2))
+    height = sum(heights) + n * gap + 58
     d = Drawing(PAGE_W, height)
     g = Group()
     y = _title(d, g, title, caption, height)
@@ -197,13 +209,14 @@ def ladder(title: str, caption: str, rungs: Sequence[Tuple[str, str, str]]) -> D
     for i, (label, band, detail) in enumerate(rungs):
         color = palette[i % len(palette)]
         tint = tints[i % len(tints)]
-        w = PAGE_W * (0.44 + 0.56 * (i + 1) / n)
+        w = widths[i]
+        bar_h = heights[i]
         y -= bar_h
         box(g, 0, y, w, bar_h, tint, color)
         box(g, 0, y, 84, bar_h, color, color)
-        centered_text(g, label, 42, y + bar_h - 8, 78, theme.BODY_BOLD, 8.4, theme.PAPER, 9.4)
-        inner = left_text(g, band, 92, y + bar_h - 5, w - 100, theme.BODY_BOLD, 8.0, color, 9.4)
-        left_text(g, detail, 92, inner - 1, w - 100, theme.BODY_FONT, 7.5, theme.INK_SOFT, 8.8)
+        centered_text(g, label, 42, y + bar_h / 2 + 4, 78, theme.BODY_BOLD, 8.4, theme.PAPER, 9.4)
+        inner = left_text(g, band, 92, y + bar_h - 5, w - 100, theme.BODY_BOLD, 8.0, color, 9.2)
+        left_text(g, detail, 92, inner - 1, w - 100, theme.BODY_FONT, 7.5, theme.INK_SOFT, 9.2)
         y -= gap
     d.add(g)
     return d
@@ -257,7 +270,7 @@ def cycle(title: str, caption: str, phases: Sequence[Tuple[str, str]],
         lines = len(wrap(detail, theme.BODY_FONT, 7.3, w - 12)) + \
             len(wrap(label, theme.BODY_BOLD, 8.2, w - 12))
         cell_h = max(cell_h, 14 + lines * 9.4)
-    height = cell_h * 2 + 34 + 58
+    height = cell_h * 2 + 34 + 70
     d = Drawing(PAGE_W, height)
     g = Group()
     top = _title(d, g, title, caption, height)

@@ -160,7 +160,7 @@ class DocxBuilder:
         for section in self.doc.sections:
             para = section.footer.paragraphs[0]
             para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = para.add_run(f"{self.book.title}  |  {self.book.stack}  |  page ")
+            run = para.add_run(f"{self.book.title}   -   ")
             run.font.size = Pt(7.5)
             run.font.color.rgb = MUTED
             fld = OxmlElement("w:fldSimple")

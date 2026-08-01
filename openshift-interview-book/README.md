@@ -131,3 +131,36 @@ The enterprise and healthcare examples are illustrative and do not describe any 
 environment. Product behaviour is written against current OpenShift 4.x and ACM 2.x documentation; a
 given project may run an earlier supported or EUS release, so version-sensitive details are worth
 spot-checking against Red Hat documentation before an interview.
+
+## V6 supplement — topics beyond OpenShift/Kubernetes
+
+The V5 book focuses on OpenShift and Kubernetes. Many senior platform roles also test Linux
+administration, Ansible, Python, Go, container image engineering, bare metal provisioning and
+HPC/AI workloads. The V6 supplement adds **100 additional questions** in those areas, researched
+from current interview guides and Red Hat documentation.
+
+```bash
+cd openshift-interview-book
+python3 build_v6.py
+```
+
+Output files:
+
+- `output/Platform_Engineer_Supplement_Interview_Book_V6_100QA.pdf`
+- `output/Platform_Engineer_Supplement_Interview_Book_V6_100QA.docx`
+- `output/Platform_Engineer_Supplement_Interview_Book_V6_100QA_Highlighted.pdf`
+- `output/Platform_Engineer_Supplement_Interview_Book_V6_100QA_Highlighted.docx`
+
+| Part | Topic | Questions |
+|-----:|-------|----------:|
+| 1 | Senior Linux administration | Q1–Q14 |
+| 2 | Bash and shell scripting for SRE | Q15–Q24 |
+| 3 | Python for SRE and platform engineers | Q25–Q36 |
+| 4 | Advanced Ansible for senior platform engineers | Q37–Q50 |
+| 5 | Go for platform engineers | Q51–Q64 |
+| 6 | Podman, Buildah, Skopeo and container images | Q65–Q76 |
+| 7 | Bare metal provisioning | Q77–Q88 |
+| 8 | HPC and AI on OpenShift | Q89–Q100 |
+
+Content lives in `content_supplement/partNN_*.py`. Use V5 and V6 together for full platform-role
+coverage.

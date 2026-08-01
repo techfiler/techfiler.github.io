@@ -22,6 +22,9 @@ SLATE = HexColor("#44576B")
 SLATE_TINT = HexColor("#EDF1F4")
 CODE_BG = HexColor("#F3F6F8")
 
+# Quick-learning edition highlighter.
+HIGHLIGHT_HEX = "#FFF07A"
+
 LEVEL_COLORS = {
     "Foundation": (TEAL, TEAL_TINT),
     "Intermediate": (BLUE, BLUE_TINT),

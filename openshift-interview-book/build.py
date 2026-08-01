@@ -32,14 +32,22 @@ def main() -> int:
         print(f"ERROR: expected 250 questions, found {book.total}", file=sys.stderr)
         return 1
 
-    pdf_path = os.path.join(args.outdir, f"{BASENAME}.pdf")
-    docx_path = os.path.join(args.outdir, f"{BASENAME}.docx")
+    # Two editions from one source: the clean read, and a quick-learning copy
+    # with the load-bearing sentences highlighted in yellow.
+    editions = [
+        (BASENAME, False),
+        (f"{BASENAME}_Highlighted", True),
+    ]
 
-    PdfBuilder(book, pdf_path).build()
-    print(f"wrote {pdf_path} ({os.path.getsize(pdf_path) / 1024:.0f} KB)")
+    for name, highlight in editions:
+        pdf_path = os.path.join(args.outdir, f"{name}.pdf")
+        docx_path = os.path.join(args.outdir, f"{name}.docx")
 
-    DocxBuilder(book, docx_path).build()
-    print(f"wrote {docx_path} ({os.path.getsize(docx_path) / 1024:.0f} KB)")
+        PdfBuilder(book, pdf_path, highlight=highlight).build()
+        print(f"wrote {pdf_path} ({os.path.getsize(pdf_path) / 1024:.0f} KB)")
+
+        DocxBuilder(book, docx_path, highlight=highlight).build()
+        print(f"wrote {docx_path} ({os.path.getsize(docx_path) / 1024:.0f} KB)")
     return 0
 
 

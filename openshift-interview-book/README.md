@@ -7,8 +7,18 @@ architecture, and inside every part the questions climb from Foundation to Archi
 Both output formats are generated from one source of truth, so the PDF and the Word document never
 drift apart.
 
+Two editions are produced from the same content:
+
+**Clean copy** — for reading properly.
+
 - `output/OpenShift_Platform_Engineer_Interview_Book_V5_250QA.pdf` — print-ready A4
 - `output/OpenShift_Platform_Engineer_Interview_Book_V5_250QA.docx` — editable Word document
+
+**Quick-learning copy** — same book with the load-bearing sentences highlighted in yellow, for a fast
+revision pass.
+
+- `output/OpenShift_Platform_Engineer_Interview_Book_V5_250QA_Highlighted.pdf`
+- `output/OpenShift_Platform_Engineer_Interview_Book_V5_250QA_Highlighted.docx`
 
 ## What changed from the earlier editions
 
@@ -36,6 +46,23 @@ This edition fixes all of that:
   matrix, request path, OVN layers, PVC lifecycle, security layers, OLM chain, upgrade flow,
   observability signals, recovery matrix, HPC alignment, GitOps flow, ACM hub and spoke, STAR-R, and
   the container stack.
+
+## What gets highlighted, and why
+
+Highlighting is generated, not hand-marked, so it stays consistent across all 250 questions and
+survives edits to the content. Selection lives in `bookgen/highlight.py` and follows how the content
+is written:
+
+- **The opening claim of each answer.** Every answer was written to lead with its point, so the first
+  sentence is the one worth skimming. A short opener pulls in the sentence after it.
+- **The closing consequence of each production-context paragraph.** Those paragraphs build to their
+  punchline, so the highlight goes at the end. A short closer extends backwards.
+- **The closing sentence of each part introduction.**
+
+That gives roughly 517 highlighted passages — about two per question — averaging 174 characters.
+Both renderers share the same selection code: `highlight.pick()` returns character spans, the PDF
+builder turns them into `<span backColor>` markup and the DOCX builder turns them into runs with a
+yellow highlight, so the two formats can never disagree about what is marked.
 
 ## Structure
 
@@ -67,9 +94,9 @@ pip install -r requirements.txt
 python3 build.py
 ```
 
-The build validates before rendering: it fails if the total is not exactly 250, if any question is
-missing a field, if any question has fewer than three steps or no evidence commands, or if two
-questions have the same text.
+This writes all four files — both editions in both formats. The build validates before rendering: it
+fails if the total is not exactly 250, if any question is missing a field, if any question has fewer
+than three steps or no evidence commands, or if two questions have the same text.
 
 ## Editing the content
 

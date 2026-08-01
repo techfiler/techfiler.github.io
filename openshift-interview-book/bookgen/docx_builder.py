@@ -13,13 +13,13 @@ from typing import List, Optional
 
 import fitz
 from docx import Document
-from docx.enum.section import WD_SECTION
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_COLOR_INDEX
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from docx.shared import Inches, Pt, RGBColor
 from reportlab.graphics import renderPDF
 
+from . import highlight as hl
 from . import infographics, theme
 from .model import Book, Part, Question
 
@@ -30,6 +30,7 @@ RED = RGBColor(0xC0, 0x39, 0x2B)
 TEAL = RGBColor(0x0E, 0x7C, 0x6B)
 PURPLE = RGBColor(0x5B, 0x3E, 0x8E)
 SLATE = RGBColor(0x44, 0x57, 0x6B)
+AMBER = RGBColor(0xB7, 0x79, 0x1F)
 
 
 def _shade(paragraph, hex_fill: str) -> None:
@@ -62,12 +63,64 @@ def _spacing(paragraph, before: int = 0, after: int = 4, indent: float = 0.0) ->
 
 
 class DocxBuilder:
-    def __init__(self, book: Book, path: str):
+    def __init__(self, book: Book, path: str, highlight: bool = False):
         self.book = book
         self.path = path
+        self.highlight = highlight
         self.doc = Document()
         self._tmpdir = tempfile.mkdtemp(prefix="bookgen-img-")
         self._setup_styles()
+
+    def _numbered(self, index: int, text: str) -> None:
+        """A manually numbered step.
+
+        Word's List Number style shares one numbering sequence across the whole
+        document, so every question's steps would continue from the last one.
+        Writing the number as text keeps each list starting at 1.
+        """
+        p = self.doc.add_paragraph()
+        marker = p.add_run(f"{index}.  ")
+        marker.bold = True
+        marker.font.size = Pt(10)
+        marker.font.color.rgb = SLATE
+        run = p.add_run(text)
+        run.font.size = Pt(10)
+        _spacing(p, after=2, indent=0.32)
+        p.paragraph_format.first_line_indent = Inches(-0.17)
+
+    @property
+    def edition_label(self) -> str:
+        if self.highlight:
+            return f"{self.book.edition}  -  quick-learning highlighted copy"
+        return self.book.edition
+
+    def _write(self, paragraph, text: str, size: float, color: RGBColor,
+               bold: bool = False, italic: bool = False, font: Optional[str] = None,
+               lead: bool = False, limit: int = 0) -> None:
+        """Add text to a paragraph, splitting into runs so key spans can be highlighted."""
+        spans = hl.pick(text, lead, limit) if (self.highlight and limit) else []
+        pieces = []
+        cursor = 0
+        for start, end in spans:
+            if start > cursor:
+                pieces.append((text[cursor:start], False))
+            pieces.append((text[start:end], True))
+            cursor = end
+        if cursor < len(text):
+            pieces.append((text[cursor:], False))
+
+        for chunk, marked in pieces:
+            run = paragraph.add_run(chunk)
+            run.font.size = Pt(size)
+            run.font.color.rgb = color
+            run.bold = bold
+            run.italic = italic
+            if font:
+                run.font.name = font
+                run._element.rPr.rFonts.set(qn("w:ascii"), font)
+                run._element.rPr.rFonts.set(qn("w:hAnsi"), font)
+            if marked:
+                run.font.highlight_color = WD_COLOR_INDEX.YELLOW
 
     # ---------------------------------------------------------------- styles
     def _setup_styles(self) -> None:
@@ -103,17 +156,9 @@ class DocxBuilder:
     # ------------------------------------------------------------- utilities
     def _para(self, text: str = "", size: float = 10.5, color: RGBColor = INK_SOFT,
               bold: bool = False, italic: bool = False, font: Optional[str] = None,
-              align=None):
+              align=None, lead: bool = False, limit: int = 0):
         p = self.doc.add_paragraph()
-        run = p.add_run(text)
-        run.font.size = Pt(size)
-        run.font.color.rgb = color
-        run.bold = bold
-        run.italic = italic
-        if font:
-            run.font.name = font
-            run._element.rPr.rFonts.set(qn("w:ascii"), font)
-            run._element.rPr.rFonts.set(qn("w:hAnsi"), font)
+        self._write(p, text, size, color, bold, italic, font, lead, limit)
         if align is not None:
             p.alignment = align
         return p
@@ -124,8 +169,10 @@ class DocxBuilder:
         return p
 
     def _callout(self, text: str, fill: str, bar: str, color: RGBColor,
-                 italic: bool = False, font: Optional[str] = None, size: float = 10.5):
-        p = self._para(text, size=size, color=color, italic=italic, font=font)
+                 italic: bool = False, font: Optional[str] = None, size: float = 10.5,
+                 lead: bool = False, limit: int = 0):
+        p = self._para(text, size=size, color=color, italic=italic, font=font,
+                       lead=lead, limit=limit)
         _shade(p, fill)
         _left_bar(p, bar)
         _spacing(p, before=2, after=6, indent=0.06)
@@ -160,7 +207,8 @@ class DocxBuilder:
         for section in self.doc.sections:
             para = section.footer.paragraphs[0]
             para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = para.add_run(f"{self.book.title}   -   ")
+            label = "  (highlighted copy)" if self.highlight else ""
+            run = para.add_run(f"{self.book.title}{label}   -   ")
             run.font.size = Pt(7.5)
             run.font.color.rgb = MUTED
             fld = OxmlElement("w:fldSimple")
@@ -179,7 +227,7 @@ class DocxBuilder:
         _spacing(p, after=10)
         self._rule()
         self._para(self.book.stack, size=9.5, color=MUTED, align=WD_ALIGN_PARAGRAPH.CENTER)
-        self._para(self.book.edition, size=9.5, color=MUTED, align=WD_ALIGN_PARAGRAPH.CENTER)
+        self._para(self.edition_label, size=9.5, color=MUTED, align=WD_ALIGN_PARAGRAPH.CENTER)
         self.doc.add_paragraph()
         self._image("learning_route")
         self._para(
@@ -235,6 +283,23 @@ class DocxBuilder:
         self._para(
             "So every one of the 250 questions here is answered in six layers. Read the first layer if you "
             "are short on time. Read all six if this is a topic you would rather not be surprised by.")
+        if self.highlight:
+            self._label("About the yellow highlighting", AMBER)
+            p = self.doc.add_paragraph()
+            self._write(p, "This is the quick-learning copy. In every question the opening claim of the "
+                           "spoken answer and the closing consequence of the production context are ",
+                        10.5, INK_SOFT)
+            run = p.add_run("marked in yellow like this")
+            run.font.size = Pt(10.5)
+            run.font.color.rgb = INK_SOFT
+            run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+            self._write(p, ". Read only the highlighted sentences for a fast revision pass through all 250 "
+                           "questions, then come back to the full text for the topics where the highlight did "
+                           "not feel like enough. A clean unhighlighted copy of the same book is published "
+                           "alongside this one.", 10.5, INK_SOFT)
+            _shade(p, "FBF3E2")
+            _left_bar(p, "B7791F")
+            _spacing(p, before=2, after=8, indent=0.06)
         self._image("six_layer_method")
         self.doc.add_heading("Levels, and why they are marked", level=2)
         self._para(
@@ -297,20 +362,17 @@ class DocxBuilder:
         _spacing(title, before=2, after=4)
 
         self._label("Say this", color)
-        self._callout(q.answer, tint, fill, INK)
+        self._callout(q.answer, tint, fill, INK, lead=True, limit=2)
 
         self._label("Think of it like", TEAL)
         self._callout(q.analogy, "E6F4F1", "0E7C6B", TEAL, italic=True)
 
         self._label("Why it matters in production", MUTED)
-        self._para(q.context)
+        self._para(q.context, limit=1)
 
         self._label("Step by step", SLATE)
         for i, step in enumerate(q.steps, 1):
-            p = self.doc.add_paragraph(style="List Number")
-            run = p.add_run(step)
-            run.font.size = Pt(10)
-            _spacing(p, after=2, indent=0.25)
+            self._numbered(i, step)
 
         self._label("Evidence you would quote", MUTED)
         for line in q.evidence:
@@ -333,7 +395,7 @@ class DocxBuilder:
         self.doc.add_heading(part.title, level=1)
         self._para(part.subtitle, size=11, color=SLATE)
         self._rule()
-        self._para(part.intro)
+        self._para(part.intro, limit=1)
         levels = {}
         for q in part.questions:
             levels[q.level] = levels.get(q.level, 0) + 1
@@ -351,17 +413,15 @@ class DocxBuilder:
         self._para(
             "You will not learn anything new in the last hour, so use it to protect what you already know. "
             "Say these six sentences out loud until they sound unrehearsed:")
-        for text in [
+        for i, text in enumerate([
             "\"Let me start with impact and scope, then the evidence I would collect.\"",
             "\"The owning controller here is X, so that is where I would read conditions first.\"",
             "\"The smallest safe action is Y, because it limits blast radius to one pool.\"",
             "\"I would validate against the customer-visible symptom, not just resource status.\"",
             "\"The trade-off is A versus B; I would choose A because of this constraint.\"",
             "\"To prevent recurrence I would add this alert and this guardrail.\"",
-        ]:
-            p = self.doc.add_paragraph(style="List Number")
-            p.add_run(text).font.size = Pt(10)
-            _spacing(p, after=2, indent=0.25)
+        ], 1):
+            self._numbered(i, text)
         self.doc.add_heading("Three habits that reliably lose offers", level=2)
         for text in [
             "Restarting things before reading anything. It sometimes works, and it always sounds junior.",

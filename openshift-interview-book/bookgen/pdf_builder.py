@@ -13,6 +13,7 @@ from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Flowable, Frame,
                                 PageBreak, PageTemplate, Paragraph, Spacer, Table,
                                 TableStyle)
 
+from . import highlight as hl
 from . import infographics, theme
 from .model import Book, Part, Question
 
@@ -151,11 +152,25 @@ def _accent_panel(rows: List[List], width: float, bg, accent) -> Table:
 
 
 class PdfBuilder:
-    def __init__(self, book: Book, path: str):
+    def __init__(self, book: Book, path: str, highlight: bool = False):
         self.book = book
         self.path = path
+        self.highlight = highlight
         self.width = A4[0] - 2 * MARGIN_X
         self._outline: List[tuple] = []
+
+    @property
+    def edition_label(self) -> str:
+        if self.highlight:
+            return f"{self.book.edition}  ·  quick-learning highlighted copy"
+        return self.book.edition
+
+    def _text(self, raw: str, lead: bool = False, limit: int = 0) -> str:
+        """Escape prose, and mark the key sentences in the quick-learning edition."""
+        if not self.highlight or limit == 0:
+            return hl.escape(raw)
+        return hl.markup(raw, hl.pick(raw, lead, limit),
+                         f'<span backColor="{theme.HIGHLIGHT_HEX}">', "</span>")
 
     # ---------------------------------------------------------------- chrome
     def _page_chrome(self, canvas, doc):
@@ -170,7 +185,7 @@ class PdfBuilder:
             canvas.setLineWidth(0.5)
             canvas.line(MARGIN_X, A4[1] - MARGIN_TOP + 4, A4[0] - MARGIN_X, A4[1] - MARGIN_TOP + 4)
             canvas.line(MARGIN_X, MARGIN_BOTTOM - 8, A4[0] - MARGIN_X, MARGIN_BOTTOM - 8)
-            canvas.drawString(MARGIN_X, MARGIN_BOTTOM - 18, self.book.edition)
+            canvas.drawString(MARGIN_X, MARGIN_BOTTOM - 18, self.edition_label)
             canvas.setFont(theme.BODY_BOLD, 8.0)
             canvas.setFillColor(theme.INK)
             canvas.drawRightString(A4[0] - MARGIN_X, MARGIN_BOTTOM - 18, str(page))
@@ -196,15 +211,16 @@ class PdfBuilder:
         head = KeepTogether([
             Badge(q.number, q.level, self.width),
             Spacer(1, 4),
-            Paragraph(q.q, S["question"]),
+            Paragraph(self._text(q.q), S["question"]),
             Spacer(1, 6),
             _accent_panel([[Paragraph("SAY THIS", ParagraphStyle(
                 "l", parent=S["label"], textColor=color))],
-                [Paragraph(q.answer, S["answer"])]], self.width, tint, color),
+                [Paragraph(self._text(q.answer, lead=True, limit=2), S["answer"])]],
+                self.width, tint, color),
         ])
 
         steps = ListFlowable(
-            [ListItem(Paragraph(s, S["step"]), leftIndent=14, value=i + 1)
+            [ListItem(Paragraph(self._text(s), S["step"]), leftIndent=14, value=i + 1)
              for i, s in enumerate(q.steps)],
             bulletType="1", bulletFontName=theme.BODY_BOLD, bulletFontSize=8.6,
             bulletColor=theme.SLATE, leftIndent=15, bulletDedent=13, spaceBefore=1,
@@ -212,7 +228,7 @@ class PdfBuilder:
 
         evidence_rows = [[Paragraph("EVIDENCE YOU WOULD QUOTE", S["label"])]]
         for line in q.evidence:
-            evidence_rows.append([Paragraph(line.replace("&", "&amp;").replace("<", "&lt;"), S["mono"])])
+            evidence_rows.append([Paragraph(hl.escape(line), S["mono"])])
 
         return [
             head,
@@ -220,12 +236,12 @@ class PdfBuilder:
             KeepTogether([
                 _label("THINK OF IT LIKE", theme.TEAL),
                 Spacer(1, 2),
-                Paragraph(q.analogy, S["analogy"]),
+                Paragraph(self._text(q.analogy), S["analogy"]),
             ]),
             Spacer(1, 7),
             _label("WHY IT MATTERS IN PRODUCTION", theme.MUTED),
             Spacer(1, 2),
-            Paragraph(q.context, S["body"]),
+            Paragraph(self._text(q.context, lead=False, limit=1), S["body"]),
             Spacer(1, 7),
             _label("STEP BY STEP", theme.SLATE),
             Spacer(1, 2),
@@ -236,11 +252,13 @@ class PdfBuilder:
             KeepTogether([
                 _accent_panel([[Paragraph("RED FLAG - DO NOT SAY THIS", ParagraphStyle(
                     "rf", parent=S["label"], textColor=theme.RED))],
-                    [Paragraph(q.redflag, S["redflag"])]], self.width, theme.RED_TINT, theme.RED),
+                    [Paragraph(self._text(q.redflag), S["redflag"])]], self.width,
+                    theme.RED_TINT, theme.RED),
                 Spacer(1, 5),
                 _accent_panel([[Paragraph("EXPECT THIS FOLLOW-UP", ParagraphStyle(
                     "fu", parent=S["label"], textColor=theme.PURPLE))],
-                    [Paragraph(q.followup, S["followup"])]], self.width, theme.PURPLE_TINT,
+                    [Paragraph(self._text(q.followup), S["followup"])]], self.width,
+                    theme.PURPLE_TINT,
                     theme.PURPLE),
             ]),
             Spacer(1, 10),
@@ -257,11 +275,11 @@ class PdfBuilder:
             PageBreak(),
             Paragraph(f"PART {part.number}  ·  {part.span}  ·  {len(part.questions)} QUESTIONS",
                       S["part_kicker"]),
-            Paragraph(part.title, S["h1"]),
-            Paragraph(part.subtitle, S["part_sub"]),
+            Paragraph(hl.escape(part.title), S["h1"]),
+            Paragraph(hl.escape(part.subtitle), S["part_sub"]),
             Rule(self.width, theme.RED, 1.6, 8),
             Spacer(1, 4),
-            Paragraph(part.intro, S["body"]),
+            Paragraph(self._text(part.intro, lead=False, limit=1), S["body"]),
             Spacer(1, 4),
             Paragraph(f"Level mix - {mix}", S["caption"]),
         ]
@@ -284,7 +302,7 @@ class PdfBuilder:
             Spacer(1, 6 * mm),
             Paragraph(self.book.stack, S["cover_meta"]),
             Spacer(1, 3 * mm),
-            Paragraph(self.book.edition, S["cover_meta"]),
+            Paragraph(self.edition_label, S["cover_meta"]),
             Spacer(1, 12 * mm),
             infographics.render("learning_route"),
             Spacer(1, 8 * mm),
@@ -314,6 +332,23 @@ class PdfBuilder:
                 "you are short on time. Read all six if this is a topic you would rather not be surprised by.",
                 S["body"]),
         ]
+        if self.highlight:
+            story += [
+                Spacer(1, 8),
+                _accent_panel([
+                    [Paragraph("ABOUT THE YELLOW HIGHLIGHTING", ParagraphStyle(
+                        "hlnote", parent=S["label"], textColor=theme.AMBER))],
+                    [Paragraph(
+                        "This is the quick-learning copy. In every question the opening claim of the spoken "
+                        "answer and the closing consequence of the production context are "
+                        f'<span backColor="{theme.HIGHLIGHT_HEX}">marked in yellow like this</span>. Read only '
+                        "the highlighted sentences for a fast revision pass through all 250 questions, then "
+                        "come back to the full text for the topics where the highlight did not feel like "
+                        "enough. A clean unhighlighted copy of the same book is published alongside this one.",
+                        S["body"])],
+                ], self.width, theme.AMBER_TINT, theme.AMBER),
+                Spacer(1, 4),
+            ]
         story += self._graphic("six_layer_method")
         story += [
             Paragraph("Levels, and why they are marked", S["h2"]),
